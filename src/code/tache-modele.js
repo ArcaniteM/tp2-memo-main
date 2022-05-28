@@ -1,5 +1,5 @@
 import { bdFirestore, collUtil, collTaches } from './init';
-import { query, orderBy, collection, doc, getDoc, getDocs, addDoc, deleteDoc, 
+import { query, where, orderBy, collection, doc, getDoc, getDocs, addDoc, deleteDoc, 
           updateDoc, Timestamp } from "firebase/firestore"; 
 
 /**
@@ -25,7 +25,8 @@ export async function creer(uid, tache) {
  * @returns {Promise<any[]>} Promesse avec le tableau des tâches
  */
 export async function lireTout(uid, tri) {
-  return getDocs(query(collection(bdFirestore, collUtil, uid, collTaches), 
+  return getDocs(query(collection(bdFirestore, collUtil, uid, collTaches),
+    orderBy('completee'), 
     orderBy(tri[0], tri[1]?'desc':'asc'))).
     then(
       qs  => qs.docs.map(doc => ({id: doc.id, ...doc.data()})) 
@@ -53,4 +54,15 @@ export async function lireTout(uid, tri) {
  export async function basculer(uid, idTache, etatCompletee) {
   let docRef = doc(bdFirestore, collUtil, uid, collTaches, idTache);
   return await updateDoc(docRef, {completee: !etatCompletee});
+}
+
+ export async function supprimerComplets(uid) {
+  let tachesCompletees = await getDocs(
+    query(collection(bdFirestore, collUtil, uid, collTaches), where("completee", "=", true))
+  );
+
+  for(const tache of tachesCompletees.docs) {
+    await deleteDoc(tache.ref)
+  }
+  return true;
 }
